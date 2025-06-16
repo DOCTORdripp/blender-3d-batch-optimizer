@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="blender-3d-batch-optimizer.png" alt="Blender 3D Batch Optimizer" width="400">
+
 # 🎯 GLTF/GLB/VRM Bulk Optimizer for Blender
 
 <p align="center">
