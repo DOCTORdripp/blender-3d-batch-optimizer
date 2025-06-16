@@ -23,21 +23,6 @@
 
 </div>
 
-## 🆕 Recent Updates
-
-<div align="center">
-
-### **🎯 Major Enhancement: True JPEG Quality Control**
-
-**v2.1 - November 2024**
-- ✅ **Fixed JPEG Quality**: Quality settings now actually affect output file sizes!
-- ✅ **Force Compression**: Real compression via temporary file save/reload cycles
-- ✅ **Enhanced Specular Removal**: Complete removal of specular tint textures and nodes
-- ✅ **Improved Error Handling**: Better socket type validation and error recovery
-- ✅ **Better Compression Ratios**: Achieving 75%+ file size reduction with quality control
-
-</div>
-
 ## ✨ Features
 
 <table>
@@ -52,6 +37,7 @@
 ### 🎨 **Smart Optimization**
 - ✅ **Texture downscaling** to configurable resolution
 - ✅ **Smart compression** with quality control (JPEG for color, PNG for normal maps)
+- ✅ **PNG to JPEG conversion** with alpha channel detection
 - ✅ **Specular removal** for material optimization
 - ✅ **Format preservation** options for compatibility
 
@@ -62,6 +48,7 @@
 - ✅ **Embedded texture support** for all formats
 - ✅ **Real-time progress reporting** with compression ratios
 - ✅ **Force compression** with actual JPEG quality control
+- ✅ **Aggressive JPEG conversion** for maximum compression
 - ✅ **Robust error handling** with batch continuation
 - ✅ **Headless operation** for server environments
 
@@ -318,11 +305,12 @@ For users who prefer a visual interface within Blender, we provide a complete ad
 ### Format Options
 
 #### **Texture Formats:**
-- **`'AUTO'`** (Recommended): Smart format selection:
-  - JPEG for color/diffuse textures
-  - PNG for normal maps, roughness, metallic, alpha textures
-- **`'JPEG'`**: Force all textures to JPEG (smaller files, some quality loss)
-- **`'PNG'`**: Force all textures to PNG (larger files, lossless)
+- **`'AUTO'`** (Recommended): Smart format selection with PNG→JPEG conversion:
+  - JPEG for color/diffuse textures (with alpha channel detection)
+  - PNG for normal maps, roughness, metallic, and textures with transparency
+  - Automatically converts PNG to JPEG when no alpha channel is detected
+- **`'JPEG'`**: Force all textures to JPEG (maximum compression, some quality loss)
+- **`'PNG'`**: Force all textures to PNG (larger files, lossless compression)
 
 #### **File Format Preservation:**
 - **`PRESERVE_FORMAT = True`**: Keep original file formats:
