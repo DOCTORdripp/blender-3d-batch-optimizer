@@ -43,13 +43,22 @@ SKIP_EXISTING = True
 TEXTURE_FORMAT = 'AUTO'
 
 # JPEG quality (1-100, only applies if using JPEG compression)
-JPEG_QUALITY = 85
+JPEG_QUALITY = 80
 
 # Preserve original file format (True = GLTF stays GLTF, False = convert GLTF to GLB)
 PRESERVE_FORMAT = False
 
 # Enable verbose logging
 VERBOSE = True
+
+# Remove specular tint textures and set specular to 0 (reduces file size)
+REMOVE_SPECULAR = True
+
+# Aggressive JPEG conversion for PNG textures (except those needing alpha)
+AGGRESSIVE_JPEG_CONVERSION = True
+
+# Force compression even when not resizing (helps reduce file size)
+FORCE_COMPRESSION = True
 
 # ================================
 # UTILITY FUNCTIONS
@@ -88,19 +97,266 @@ def clear_scene():
     except Exception as e:
         log(f"Warning: Error clearing scene: {e}", "WARNING")
 
-def get_texture_format(image_name, node_type=None):
-    """Determine optimal texture format based on image type."""
+def has_alpha_channel(image):
+    """Check if image actually uses alpha channel (has transparency)."""
+    try:
+        if not image or not image.pixels:
+            return False
+        
+        # Check if image has alpha channel data
+        if len(image.pixels) % 4 != 0:
+            return False  # No alpha channel in pixel data
+        
+        # Sample alpha values to see if any are not 1.0 (fully opaque)
+        # Only check a sample of pixels for performance (every 100th pixel)
+        pixels = image.pixels[:]
+        alpha_values = pixels[3::4]  # Every 4th value is alpha
+        
+        # Sample every 100th alpha value for performance
+        sample_step = max(1, len(alpha_values) // 1000)  # Check at most 1000 pixels
+        
+        # If any sampled alpha value is not 1.0, we need transparency
+        for i in range(0, len(alpha_values), sample_step):
+            if alpha_values[i] < 0.98:  # Small tolerance for floating point
+                if VERBOSE:
+                    log(f"Alpha channel detected in '{image.name}' (alpha value: {alpha_values[i]:.3f})")
+                return True
+        
+        return False
+    except Exception as e:
+        if VERBOSE:
+            log(f"Warning: Could not analyze alpha channel for '{image.name if image else 'unknown'}': {e}")
+        # If we can't determine, be conservative and assume no alpha
+        return False
+
+def get_texture_format(image_name, node_type=None, image=None):
+    """Determine optimal texture format based on image type and actual usage."""
     if TEXTURE_FORMAT == 'PNG':
         return 'PNG'
     elif TEXTURE_FORMAT == 'JPEG':
         return 'JPEG'
-    else:  # AUTO
+    else:  # AUTO - smart format selection
         name_lower = image_name.lower()
-        # Use PNG for normal maps, roughness, metallic, and alpha textures
-        if any(keyword in name_lower for keyword in ['normal', 'nrm', 'bump', 'roughness', 'metallic', 'alpha', 'opacity', 'mask']):
+        
+        # Always use PNG for normal maps, roughness, metallic (they need precision)
+        if any(keyword in name_lower for keyword in ['normal', 'nrm', 'bump', 'roughness', 'metallic']):
             return 'PNG'
-        # Use JPEG for color/diffuse textures
+        
+        # If aggressive JPEG conversion is enabled, check for actual alpha usage
+        if AGGRESSIVE_JPEG_CONVERSION:
+            # Only keep PNG if image actually uses alpha channel
+            if image and has_alpha_channel(image):
+                if VERBOSE:
+                    log(f"Keeping '{image_name}' as PNG due to alpha channel usage")
+                return 'PNG'
+            else:
+                # Convert PNG to JPEG for better compression
+                if image and image.file_format == 'PNG':
+                    if VERBOSE:
+                        log(f"Converting PNG '{image_name}' to JPEG (no alpha channel detected)")
+                return 'JPEG'
+        else:
+            # Conservative approach - check name patterns
+            if any(keyword in name_lower for keyword in ['alpha', 'opacity', 'mask']):
+                return 'PNG'
+        
+        # For everything else (diffuse, color, etc.), use JPEG for better compression
         return 'JPEG'
+
+def clean_material_properties(material):
+    """Remove specular tint and reduce specular to 0 for better compression."""
+    if not REMOVE_SPECULAR:
+        return
+        
+    try:
+        if not material.use_nodes:
+            # For materials without nodes, set basic specular properties
+            if hasattr(material, 'specular_intensity'):
+                material.specular_intensity = 0.0
+            if hasattr(material, 'specular_color'):
+                material.specular_color = (0.0, 0.0, 0.0)
+            if VERBOSE:
+                log(f"Set specular properties to 0 on non-node material: {material.name}")
+            return
+        
+        nodes_to_remove = []
+        links_to_remove = []
+        
+        # Log current specular values for debugging
+        if VERBOSE:
+            for node in material.node_tree.nodes:
+                if node.type == 'BSDF_PRINCIPLED':
+                    for input_name in ['Specular', 'Specular IOR Level', 'Specular Tint']:
+                        if input_name in node.inputs:
+                            input_socket = node.inputs[input_name]
+                            log(f"Material '{material.name}' - {input_name} current value: {input_socket.default_value}")
+        
+        for node in material.node_tree.nodes:
+            # Remove specular tint texture nodes
+            if node.type == 'TEX_IMAGE' and node.image:
+                image_name_lower = node.image.name.lower()
+                node_name_lower = node.name.lower()
+                
+                # Check both image name and node name for specular tint
+                if any(keyword in image_name_lower for keyword in ['specular_tint', 'spectint', 'spec_tint', 'specular tint']) or \
+                   any(keyword in node_name_lower for keyword in ['specular_tint', 'spectint', 'spec_tint', 'specular tint']):
+                    if VERBOSE:
+                        log(f"Removing specular tint texture: {node.image.name} (node: {node.name})")
+                    # Disconnect all links from this node
+                    for output in node.outputs:
+                        for link in output.links:
+                            links_to_remove.append(link)
+                    nodes_to_remove.append(node)
+            
+            # Set specular values to 0 on principled BSDF
+            elif node.type == 'BSDF_PRINCIPLED':
+                # Handle different input names for specular
+                specular_inputs = []
+                
+                # Check for various specular input names
+                for input_name in ['Specular', 'Specular IOR Level', 'Specular Tint']:
+                    if input_name in node.inputs:
+                        specular_inputs.append(node.inputs[input_name])
+                
+                for specular_input in specular_inputs:
+                    try:
+                        # Disconnect any links to specular input
+                        for link in specular_input.links:
+                            links_to_remove.append(link)
+                        
+                        # Set specular to 0
+                        if specular_input.name == 'Specular Tint':
+                            # Specular Tint can be float or color - check the socket type
+                            if hasattr(specular_input, 'default_value'):
+                                current_val = specular_input.default_value
+                                if isinstance(current_val, (int, float)):
+                                    specular_input.default_value = 1.0  # White for float
+                                else:
+                                    specular_input.default_value = (1.0, 1.0, 1.0, 1.0)  # White for color
+                        else:
+                            # Regular specular inputs should be 0
+                            if hasattr(specular_input, 'default_value'):
+                                if isinstance(specular_input.default_value, (int, float)):
+                                    specular_input.default_value = 0.0
+                                else:
+                                    specular_input.default_value = (0.0, 0.0, 0.0, 1.0)
+                        
+                        if VERBOSE:
+                            log(f"Set {specular_input.name} to {specular_input.default_value} on material: {material.name}")
+                    
+                    except Exception as e:
+                        if VERBOSE:
+                            log(f"Warning: Could not set {specular_input.name} on material {material.name}: {e}", "WARNING")
+            
+            # Also handle other specular-related nodes
+            elif node.type in ['BSDF_GLOSSY', 'BSDF_ANISOTROPIC']:
+                # Remove or minimize glossy/anisotropic nodes that add specular reflection
+                if VERBOSE:
+                    log(f"Found specular node type {node.type} in material {material.name} - marking for removal")
+                nodes_to_remove.append(node)
+        
+        # Remove the marked links first
+        for link in links_to_remove:
+            try:
+                material.node_tree.links.remove(link)
+            except:
+                pass  # Link might already be removed
+        
+        # Remove the marked nodes
+        for node in nodes_to_remove:
+            try:
+                node_name = node.name
+                material.node_tree.nodes.remove(node)
+                if VERBOSE:
+                    log(f"Successfully removed node '{node_name}' from material '{material.name}'")
+            except Exception as e:
+                if VERBOSE:
+                    log(f"Warning: Could not remove node '{node.name}' from material '{material.name}': {e}", "WARNING")
+            
+    except Exception as e:
+        log(f"Warning: Error cleaning material properties for '{material.name}': {e}", "WARNING")
+
+def apply_texture_compression(image, target_format):
+    """Apply texture compression by setting format and compressing via file save/reload."""
+    try:
+        if not image:
+            return
+        
+        original_format = image.file_format
+        was_packed = image.packed_file is not None
+        
+        if target_format == 'JPEG':
+            if VERBOSE:
+                log(f"Converting '{image.name}' to JPEG format (quality: {JPEG_QUALITY}%)")
+            
+            # Set JPEG format
+            image.file_format = 'JPEG'
+            
+            # Set quality for export
+            try:
+                image.file_format_quality = JPEG_QUALITY / 100.0
+            except AttributeError:
+                # Fallback for older Blender versions
+                bpy.context.scene.render.image_settings.quality = JPEG_QUALITY
+            
+            # Force compression by saving and reloading if needed
+            if FORCE_COMPRESSION or original_format != 'JPEG':
+                try:
+                    import tempfile
+                    import os
+                    
+                    # Save to temporary file with compression
+                    temp_dir = tempfile.gettempdir()
+                    temp_file = os.path.join(temp_dir, f"temp_{image.name}.jpg")
+                    
+                    # Set render settings for JPEG quality (used by image.save_render)
+                    original_quality = bpy.context.scene.render.image_settings.quality
+                    original_format = bpy.context.scene.render.image_settings.file_format
+                    
+                    bpy.context.scene.render.image_settings.file_format = 'JPEG'
+                    bpy.context.scene.render.image_settings.quality = JPEG_QUALITY
+                    
+                    # Save with JPEG compression using render settings
+                    image.filepath_raw = temp_file
+                    image.save_render(temp_file)
+                    
+                    # Restore original render settings
+                    bpy.context.scene.render.image_settings.quality = original_quality
+                    bpy.context.scene.render.image_settings.file_format = original_format
+                    
+                    # Reload the compressed version
+                    image.filepath = temp_file
+                    image.source = 'FILE'
+                    image.reload()
+                    
+                    # Pack if it was originally packed
+                    if was_packed:
+                        image.pack()
+                    
+                    # Clean up temp file
+                    try:
+                        os.remove(temp_file)
+                    except:
+                        pass
+                    
+                    if VERBOSE:
+                        log(f"Successfully compressed '{image.name}' to JPEG with quality {JPEG_QUALITY}%")
+                        
+                except Exception as e:
+                    if VERBOSE:
+                        log(f"Warning: Could not save/reload compress '{image.name}': {e}")
+                    # Just set format without compression
+                        
+        elif target_format == 'PNG':
+            image.file_format = 'PNG'
+            if VERBOSE:
+                log(f"Keeping '{image.name}' as PNG format")
+        
+        # Update the image
+        image.update()
+        
+    except Exception as e:
+        log(f"Warning: Error applying compression to '{image.name}': {e}", "WARNING")
 
 def resize_image(image, target_width, target_height):
     """Resize a Blender image to target dimensions."""
@@ -136,10 +392,28 @@ def process_material_textures(material):
             # Skip if image is already processed
             if hasattr(image, '_bulk_processed'):
                 continue
+            
+            # Skip specular tint images that should have been removed
+            image_name_lower = image.name.lower()
+            node_name_lower = node.name.lower()
+            if any(keyword in image_name_lower for keyword in ['specular_tint', 'spectint', 'spec_tint', 'specular tint']) or \
+               any(keyword in node_name_lower for keyword in ['specular_tint', 'spectint', 'spec_tint', 'specular tint']):
+                if VERBOSE:
+                    log(f"Skipping specular tint texture that should have been removed: {image.name}")
+                continue
                 
             original_packed = image.packed_file is not None
             
-            # Store original image data in memory for processing
+            # Determine optimal format based on actual image content
+            target_format = get_texture_format(image.name, node.type, image)
+            
+            # Apply texture compression format
+            apply_texture_compression(image, target_format)
+            
+            # Count this as processed since we applied compression
+            processed_count += 1
+            
+            # Resize if needed
             if image.size[0] > TARGET_RESOLUTION or image.size[1] > TARGET_RESOLUTION:
                 if VERBOSE:
                     log(f"Resizing '{image.name}' from {image.size[0]}x{image.size[1]} to {TARGET_RESOLUTION}x{TARGET_RESOLUTION}")
@@ -147,7 +421,6 @@ def process_material_textures(material):
                 # Resize the image in memory
                 image.scale(TARGET_RESOLUTION, TARGET_RESOLUTION)
                 image.update()
-                processed_count += 1
                 
                 if VERBOSE:
                     log(f"Successfully resized texture '{image.name}'")
@@ -317,6 +590,12 @@ def process_glb_file(input_path, output_path):
         if not import_file(input_path):
             return False
         
+        # First clean up all materials (remove specular tint, set specular to 0)
+        if REMOVE_SPECULAR:
+            for material in bpy.data.materials:
+                if material.users > 0:  # Only process materials that are actually used
+                    clean_material_properties(material)
+        
         # Process materials and textures
         total_textures_processed = 0
         processed_materials = 0
@@ -367,6 +646,14 @@ def main():
     log(f"Output directory: {OUTPUT_DIR}")
     log(f"Target resolution: {TARGET_RESOLUTION}x{TARGET_RESOLUTION}")
     log(f"Texture format: {TEXTURE_FORMAT}")
+    if REMOVE_SPECULAR:
+        log("Specular removal: ENABLED")
+    if AGGRESSIVE_JPEG_CONVERSION:
+        log("Aggressive JPEG conversion: ENABLED")
+    if FORCE_COMPRESSION:
+        log("Force compression: ENABLED")
+    if TEXTURE_FORMAT in ['AUTO', 'JPEG']:
+        log(f"JPEG quality: {JPEG_QUALITY}%")
     
     # Validate directories
     input_path = Path(INPUT_DIR)
