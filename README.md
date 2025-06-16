@@ -11,11 +11,11 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#requirements">Requirements</a> •
-  <a href="#installation--setup">Installation</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#license">License</a>
+  <a href="#-features">Features</a> •
+  <a href="#-requirements">Requirements</a> •
+  <a href="#-installation--setup">Installation</a> •
+  <a href="#-usage">Usage</a> •
+  <a href="#-license">License</a>
 </p>
 
 </div>
