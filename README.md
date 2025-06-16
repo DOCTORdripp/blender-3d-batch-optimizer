@@ -17,6 +17,7 @@
   <a href="#-requirements">Requirements</a> •
   <a href="#%EF%B8%8F-installation--setup">Installation</a> •
   <a href="#-usage">Usage</a> •
+  <a href="#-blender-addon-gui-version">Blender Addon</a> •
   <a href="#-license">License</a>
 </p>
 
@@ -168,6 +169,117 @@ blender --background --python glb_bulk_optimizer.py
 ```
 
 </details>
+
+## 🎨 Blender Addon (GUI Version)
+
+<div align="center">
+
+### **🖥️ User-Friendly Graphical Interface**
+
+For users who prefer a visual interface within Blender, we provide a complete addon version with an intuitive GUI.
+
+</div>
+
+<details>
+<summary><strong>📦 Addon Installation</strong></summary>
+
+1. **Download** the `3d-batch-optimizer-blender_addon.zip` file from this repository
+2. **Open Blender** (version 3.0 or higher)
+3. **Go to** Edit → Preferences → Add-ons
+4. **Click** "Install..." button
+5. **Select** the downloaded zip file
+6. **Enable** the "Bulk 3D Optimizer" addon by checking the checkbox
+7. **Save Preferences** to make it permanent
+
+</details>
+
+<details>
+<summary><strong>🎛️ Using the Addon</strong></summary>
+
+1. **Open Blender** and switch to any 3D viewport
+2. **Look for** the "Bulk Optimizer" tab in the sidebar (press `N` if sidebar is hidden)
+3. **Configure** your settings:
+   - **Input Directory**: Browse and select folder containing your 3D files
+   - **Output Directory**: Choose where to save optimized files
+   - **Target Resolution**: Set texture size (512 recommended)
+   - **Texture Format**: Choose AUTO, JPEG, or PNG
+   - **Additional Options**: Skip existing files, preserve formats, etc.
+4. **Click** "Start Optimization" to begin processing
+5. **Monitor Progress** through Blender's info panel and console
+
+</details>
+
+<details>
+<summary><strong>✨ Addon Features</strong></summary>
+
+### **🖱️ Point-and-Click Interface**
+- **Directory Browser**: Easy folder selection with visual feedback
+- **Real-time Validation**: Instant warnings for invalid settings
+- **Progress Reporting**: Live updates in Blender's UI system
+
+### **⚙️ Visual Settings Control**
+- **Slider Controls**: Intuitive resolution and quality adjustment
+- **Dropdown Menus**: Easy format selection
+- **Toggle Switches**: Simple on/off options
+- **Smart Defaults**: Pre-configured optimal settings
+
+### **🔄 Seamless Integration**
+- **Native Blender UI**: Follows Blender's design standards
+- **Sidebar Panel**: Always accessible in 3D viewport
+- **Error Handling**: Graceful failure handling that won't crash Blender
+- **Memory Management**: Optimized for Blender's addon environment
+
+</details>
+
+<details>
+<summary><strong>🆚 Command Line vs Addon Comparison</strong></summary>
+
+<div align="center">
+
+| Feature | Command Line Script | Blender Addon |
+|---------|-------------------|---------------|
+| **🎯 Ease of Use** | Technical users | All skill levels |
+| **🖥️ Interface** | Text-based configuration | Visual GUI controls |
+| **⚡ Automation** | Perfect for scripting | Point-and-click operation |
+| **🔧 Integration** | Standalone execution | Built into Blender |
+| **📊 Progress Feedback** | Console output | Blender UI updates |
+| **🎛️ Settings** | Edit script file | Visual controls |
+| **🚀 Best For** | Batch automation, servers | Interactive use, artists |
+
+</div>
+
+**💡 Recommendation**: 
+- Use the **Command Line Script** for automated workflows, batch processing, or server environments
+- Use the **Blender Addon** for interactive work, learning, or when you prefer visual interfaces
+
+</details>
+
+<details>
+<summary><strong>🔧 Addon Troubleshooting</strong></summary>
+
+**Addon doesn't appear in sidebar:**
+- Press `N` to show/hide the sidebar in 3D viewport
+- Make sure the addon is enabled in Preferences → Add-ons
+- Try switching to a different workspace and back
+
+**"⚠️ Select input directory" warning:**
+- Click the folder icon next to Input field
+- Navigate to a folder containing .glb, .gltf, or .vrm files
+- Ensure the folder path doesn't contain special characters
+
+**VRM files not processing:**
+- Install the VRM addon from [VRM Add-on for Blender](https://vrm-addon-for-blender.info/en/)
+- Enable it in Add-ons preferences
+- Restart Blender after installation
+
+**Processing seems stuck:**
+- Check Blender's console (Window → Toggle System Console on Windows)
+- Large files may take several minutes to process
+- Memory usage can be high - close other applications
+
+</details>
+
+---
 
 ## Configuration Options
 
