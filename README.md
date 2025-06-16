@@ -13,7 +13,7 @@
 <p align="center">
   <a href="#-features">Features</a> •
   <a href="#-requirements">Requirements</a> •
-  <a href="#-installation--setup">Installation</a> •
+  <a href="#%EF%B8%8F-installation--setup">Installation</a> •
   <a href="#-usage">Usage</a> •
   <a href="#-license">License</a>
 </p>
@@ -384,8 +384,7 @@ limitations under the License.
 - ✅ Directory permissions and paths
 
 <p>
-  <a href="https://github.com/yourusername/repo/issues">🐛 Report Issues</a> •
-  <a href="https://github.com/yourusername/repo/discussions">💬 Discussions</a> •
+  <a href="https://github.com/DOCTORdripp/blender-3d-batch-optimizer/issues">🐛 Report Issues</a> •
   <a href="#license">📄 License</a>
 </p>
 
