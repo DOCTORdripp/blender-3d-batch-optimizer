@@ -16,6 +16,7 @@
   <a href="#-features">Features</a> •
   <a href="#-requirements">Requirements</a> •
   <a href="#%EF%B8%8F-installation--setup">Installation</a> •
+  <a href="#-tutorial">Tutorial</a> •
   <a href="#-usage">Usage</a> •
   <a href="#-blender-addon-gui-version">Blender Addon</a> •
   <a href="#-license">License</a>
@@ -125,6 +126,30 @@ VERBOSE = True                # Enable detailed logging
 ```
 
 </details>
+
+## 📺 Tutorial
+
+<div align="center">
+
+### **🎥 Complete Video Walkthrough**
+
+<p align="center">
+  Watch this comprehensive tutorial that covers installation, setup, and usage of the Blender add-on version of 3D Batch Optimizer.
+</p>
+
+</div>
+
+<div align="center">
+  <iframe width="100%" height="400" src="https://www.youtube.com/embed/e1yKvyjPQHM" title="Blender 3D Batch Optimizer Tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</div>
+
+<div align="center">
+  <p>
+    <a href="https://www.youtube.com/watch?v=e1yKvyjPQHM" target="_blank">🔗 Watch on YouTube</a>
+  </p>
+</div>
+
+---
 
 ## 🚀 Usage
 
