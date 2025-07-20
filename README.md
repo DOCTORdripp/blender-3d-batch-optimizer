@@ -140,12 +140,17 @@ VERBOSE = True                # Enable detailed logging
 </div>
 
 <div align="center">
-  <iframe width="100%" height="400" src="https://www.youtube.com/embed/e1yKvyjPQHM" title="Blender 3D Batch Optimizer Tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <a href="https://www.youtube.com/watch?v=e1yKvyjPQHM" target="_blank">
+    <img src="https://img.youtube.com/vi/e1yKvyjPQHM/maxresdefault.jpg" alt="Blender 3D Batch Optimizer Tutorial" width="600" style="border-radius: 10px;">
+  </a>
 </div>
 
 <div align="center">
   <p>
-    <a href="https://www.youtube.com/watch?v=e1yKvyjPQHM" target="_blank">🔗 Watch on YouTube</a>
+    <strong>👆 Click the image above to watch the tutorial on YouTube</strong>
+  </p>
+  <p>
+    <a href="https://www.youtube.com/watch?v=e1yKvyjPQHM" target="_blank">🎬 Direct YouTube Link</a>
   </p>
 </div>
 
